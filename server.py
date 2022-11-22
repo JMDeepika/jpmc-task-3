@@ -19,8 +19,8 @@
 #  DEALINGS IN THE SOFTWARE.
 
 #from itertools import izip
-from random    import normalvariate, random
-from datetime  import timedelta, datetime
+from random import normalvariate, random
+from datetime import timedelta, datetime
 
 import csv
 import dateutil.parser
@@ -33,7 +33,7 @@ import threading
 
 #from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
 import http.server
-from socketserver   import ThreadingMixIn
+from socketserver import ThreadingMixIn
 
 ################################################################################
 #
@@ -41,14 +41,14 @@ from socketserver   import ThreadingMixIn
 
 # Sim params
 
-REALTIME    = True
-SIM_LENGTH  = timedelta(days = 365 * 5)
+REALTIME = True
+SIM_LENGTH = timedelta(days = 365 * 5)
 MARKET_OPEN = datetime.today().replace(hour = 0, minute = 30, second = 0)
 
 # Market parms
 #       min  / max  / std
-SPD  = (2.0,   6.0,   0.1)
-PX   = (60.0,  150.0, 1)
+SPD = (2.0,   6.0,   0.1)
+PX = (60.0,  150.0, 1)
 FREQ = (12,    36,   50)
 
 # Trades
@@ -80,9 +80,9 @@ def orders(hist):
     """
     for t, px, spd in hist:
         stock = 'ABC' if random() > 0.5 else 'DEF'
-        side, d  = ('sell', 2) if random() > 0.5 else ('buy', -2)
+        side, d = ('sell', 2) if random() > 0.5 else ('buy', -2)
         order = round(normalvariate(px + (spd / d), spd / OVERLAP), 2)
-        size  = int(abs(normalvariate(0, 100)))
+        size = int(abs(normalvariate(0, 100)))
         yield t, stock, side, order, size
 
 
@@ -120,7 +120,7 @@ def clear_book(buy = None, sell = None):
         new_book = clear_order(order, size, sell)
         if new_book:
             sell = new_book[1]
-            buy  = buy[1:]
+            buy = buy[1:]
         else:
             break
     return buy, sell
@@ -165,6 +165,7 @@ class ThreadedHTTPServer(ThreadingMixIn, http.server.HTTPServer):
         shutdown.
     """
     allow_reuse_address = True
+
     def shutdown(self):
         """ Override MRO to shutdown properly. """
         self.socket.close()
@@ -209,13 +210,14 @@ def run(routes, host = '0.0.0.0', port = 8080):
     class RequestHandler(http.server.BaseHTTPRequestHandler):
         def log_message(self, *args, **kwargs):
             pass
+
         def do_GET(self):
             get(self, routes)
     server = ThreadedHTTPServer((host, port), RequestHandler)
     thread = threading.Thread(target = server.serve_forever)
     thread.daemon = True
     thread.start()
-    print ('HTTP server started on port 8080')
+    print('HTTP server started on port 8080')
     while True:
         from time import sleep
         sleep(1)
@@ -236,12 +238,12 @@ class App(object):
     """ The trading game server application. """
 
     def __init__(self):
-        self._book_1    = dict()
-        self._book_2    = dict()
-        self._data_1    = order_book(read_csv(), self._book_1, 'ABC')
-        self._data_2    = order_book(read_csv(), self._book_2, 'DEF')
+        self._book_1 = dict()
+        self._book_2 = dict()
+        self._data_1 = order_book(read_csv(), self._book_1, 'ABC')
+        self._data_2 = order_book(read_csv(), self._book_2, 'DEF')
         self._rt_start = datetime.now()
-        self._sim_start, _, _  = next(self._data_1)
+        self._sim_start, _, _ = next(self._data_1)
         self.read_10_first_lines()
 
     @property
@@ -263,9 +265,9 @@ class App(object):
                 yield t, bids, asks
 
     def read_10_first_lines(self):
-            for _ in iter(range(10)):
-                next(self._data_1)
-                next(self._data_2)
+        for _ in iter(range(10)):
+            next(self._data_1)
+            next(self._data_2)
 
     @route('/query')
     def handle_query(self, x):
@@ -276,12 +278,12 @@ class App(object):
             t1, bids1, asks1 = next(self._current_book_1)
             t2, bids2, asks2 = next(self._current_book_2)
         except Exception as e:
-            print ("error getting stocks...reinitalizing app")
+            print("error getting stocks...reinitalizing app")
             self.__init__()
             t1, bids1, asks1 = next(self._current_book_1)
             t2, bids2, asks2 = next(self._current_book_2)
         t = t1 if t1 > t2 else t2
-        print ('Query received @ t%s' % t)
+        print('Query received @ t%s' % t)
         return [{
             'id': x and x.get('id', None),
             'stock': 'ABC',
@@ -315,6 +317,6 @@ class App(object):
 
 if __name__ == '__main__':
     if not os.path.isfile('test.csv'):
-        print ("No data found, generating...")
+        print("No data found, generating...")
         generate_csv()
     run(App())
